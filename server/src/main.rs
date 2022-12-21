@@ -6,6 +6,7 @@ use log::{info, trace};
 use env_logger::Env;
 use args::Args;
 use clap::Parser;
+use std::thread;
 
 use bufstream::BufStream;
 
@@ -39,7 +40,6 @@ fn handle_client(conn: TcpStream) -> Result<()> {
     Ok(())
 }
 
-// TODO: Multithreaded
 // TODO: Log where the server listens from (addr and port)
 fn main() -> Result<()> {
     env_logger::Builder
@@ -50,11 +50,13 @@ fn main() -> Result<()> {
 
     let listener = TcpListener::bind(format!("0.0.0.0:{}", args.port))?;
 
-    for conn in listener.incoming() {
-        let conn = conn?;
-        info!("Received connection from {}", conn.peer_addr()?.to_string());
-        handle_client(conn)?;
+    loop {
+        for conn in listener.incoming() {
+            let conn = conn?;
+            info!("Received connection from {}", conn.peer_addr()?.to_string());
+            let _handle = thread::spawn(|| { handle_client(conn).unwrap() });
+        }
+
     }
 
-    Ok(())
 }
