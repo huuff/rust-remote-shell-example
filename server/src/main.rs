@@ -7,6 +7,7 @@ use env_logger::Env;
 use args::Args;
 use clap::Parser;
 use std::thread;
+use itertools::Itertools;
 
 use bufstream::BufStream;
 
@@ -29,10 +30,20 @@ fn handle_client(conn: TcpStream) -> Result<()> {
             break;
         }
 
-        // Just echo the request to the client
-        stream.write_all(request.as_bytes())?;
-        stream.flush()?;
-        trace!("Sent {} to {}", request, peer_addr);
+        let mut command_parts = request.split_whitespace();
+
+        match command_parts.next().unwrap() {
+            "echo" => {
+                let response = format!("{}\n", command_parts.join(" "));
+                stream.write_all(response.as_bytes())?;
+                stream.flush()?;
+                trace!("Sent {} to {}", request, peer_addr);
+            }
+            _ => {
+                stream.write_all("Command not understood\n".as_bytes())?;
+                stream.flush()?;
+            }
+        }
     }
 
     info!("Dropping connection from {}", peer_addr);
@@ -46,7 +57,6 @@ fn main() -> Result<()> {
               .init();
 
     let args = Args::parse();
-
     let bind_addr = format!("{}:{}", args.addr, args.port);
     let listener = TcpListener::bind(&bind_addr)?;
     info!("Bound to {}", bind_addr);
