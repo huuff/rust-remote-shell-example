@@ -1,5 +1,6 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{Write, BufRead, Result};
+use log::info;
 
 use bufstream::BufStream;
 
@@ -26,11 +27,17 @@ fn handle_client(conn: TcpStream) -> Result<()> {
     Ok(())
 }
 
+// TODO: Multithreaded
+// TODO: Port from clap
 fn main() -> Result<()> {
+    env_logger::init();
+
     let listener = TcpListener::bind("0.0.0.0:3333")?;
 
     for conn in listener.incoming() {
-        handle_client(conn?)?;
+        let conn = conn?;
+        info!("Received connection from {}", conn.peer_addr()?.to_string());
+        handle_client(conn)?;
     }
 
     Ok(())
