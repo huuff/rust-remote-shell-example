@@ -40,7 +40,6 @@ fn handle_client(conn: TcpStream) -> Result<()> {
     Ok(())
 }
 
-// TODO: Log where the server listens from (addr and port)
 fn main() -> Result<()> {
     env_logger::Builder
               ::from_env(Env::default().default_filter_or("info"))
@@ -48,7 +47,9 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let listener = TcpListener::bind(format!("0.0.0.0:{}", args.port))?;
+    let bind_addr = format!("{}:{}", args.addr, args.port);
+    let listener = TcpListener::bind(&bind_addr)?;
+    info!("Bound to {}", bind_addr);
 
     loop {
         for conn in listener.incoming() {
