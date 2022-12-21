@@ -25,12 +25,14 @@ fn handle_client(conn: TcpStream) -> Result<()> {
         stream.flush()?;
     }
 
+    info!("Dropping connection from {}", conn.peer_addr()?.to_string());
+
     Ok(())
 }
 
 // TODO: Multithreaded
 // TODO: Port from clap
-// TODO: Log connection drop
+// TODO: It's returning all previous messages. Fix it.
 fn main() -> Result<()> {
     env_logger::Builder
               ::from_env(Env::default().default_filter_or("info"))
