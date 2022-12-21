@@ -38,11 +38,16 @@ fn handle_client(conn: TcpStream) -> Result<()> {
                 stream.write_all(response.as_bytes())?;
                 stream.flush()?;
                 trace!("Sent {} to {}", request, peer_addr);
-            }
+            },
+            "exit" => {
+                stream.write_all("Bye!\n".as_bytes())?;
+                stream.flush()?;
+                break;
+            },
             _ => {
                 stream.write_all("Command not understood\n".as_bytes())?;
                 stream.flush()?;
-            }
+            },
         }
     }
 
