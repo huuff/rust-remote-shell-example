@@ -7,11 +7,11 @@ fn handle_client(conn: TcpStream) -> Result<()> {
     let mut request = String::with_capacity(512);
     let mut stream = BufStream::new(&conn);
 
-    // Send prompt to client
-    stream.write_all(b"> ")?;
-    stream.flush()?;
-
     loop {
+        // Send prompt to client
+        stream.write_all(b"> ")?;
+        stream.flush()?;
+
         let request_size = stream.read_line(&mut request)?;
         
         if request_size == 0 {
