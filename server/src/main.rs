@@ -1,7 +1,11 @@
+mod args;
+
 use std::net::{TcpListener, TcpStream};
 use std::io::{Write, BufRead, Result};
 use log::{info, trace};
 use env_logger::Env;
+use args::Args;
+use clap::Parser;
 
 use bufstream::BufStream;
 
@@ -36,13 +40,15 @@ fn handle_client(conn: TcpStream) -> Result<()> {
 }
 
 // TODO: Multithreaded
-// TODO: Port from clap
+// TODO: Log where the server listens from (addr and port)
 fn main() -> Result<()> {
     env_logger::Builder
               ::from_env(Env::default().default_filter_or("info"))
               .init();
 
-    let listener = TcpListener::bind("0.0.0.0:3333")?;
+    let args = Args::parse();
+
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", args.port))?;
 
     for conn in listener.incoming() {
         let conn = conn?;
