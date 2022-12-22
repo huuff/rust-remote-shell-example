@@ -1,8 +1,9 @@
 mod args;
 mod writeline;
 
+use std::fs::File;
 use std::net::{TcpListener, TcpStream};
-use std::io::{Write, BufRead, Result};
+use std::io::{Write, BufRead, Result, BufReader};
 use log::{info, trace};
 use env_logger::Env;
 use args::Args;
@@ -35,6 +36,7 @@ fn handle_client(conn: TcpStream) -> Result<()> {
 
         let mut command_parts = request.split_whitespace();
 
+        // TODO: Logging the command that is running
         match command_parts.next().unwrap() {
             "echo" => {
                 // TODO: Correct word splitting?
@@ -45,6 +47,15 @@ fn handle_client(conn: TcpStream) -> Result<()> {
                 // TODO: Arguments?
                 let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
                 stream.write_line(dirs.as_str())?;
+            },
+            "cat" => {
+                // TODO: Handle error (missing file?)
+                let argument = command_parts.next().expect("Missing an argument to cat");
+                let file = File::open(argument)?;
+                let reader = BufReader::new(file);
+                for line in reader.lines() {
+                    stream.write_line(line?.as_str())?;
+                }
             },
             "exit" => {
                 stream.write_line("Bye")?;
