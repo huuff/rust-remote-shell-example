@@ -1,3 +1,5 @@
+use std::str::SplitWhitespace;
+
 use itertools::Itertools;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -46,10 +48,34 @@ impl Cat {
 
 pub struct Exit {}
 
+
 enum ExpectedArguments {
     None,
-    Exactly(u8),
+    Exactly(usize),
     Any,
+}
+
+fn parse_arguments(args: SplitWhitespace, expected_arguments: ExpectedArguments) -> Result<Vec<String>, BadCommandError> {
+    let args = args.map(str::to_string).collect::<Vec<String>>();
+    match expected_arguments {
+        ExpectedArguments::None => {
+            if args.len() == 0 {
+                Ok(Vec::new())
+            } else {
+                Err(BadCommandError::wrong_arg_number(0, args.len()))
+            }
+        },
+        ExpectedArguments::Any => {
+            Ok(args)
+        }
+        ExpectedArguments::Exactly(n) => {
+            if args.len() == n {
+                Ok(args)
+            } else {
+                Err(BadCommandError::wrong_arg_number(n, args.len()))
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -63,6 +89,9 @@ impl BadCommandError {
     }
     pub fn from_str(msg: &str) -> Self {
         BadCommandError::from_string(String::from(msg))
+    }
+    pub fn wrong_arg_number(expected: usize, got: usize) -> Self {
+        BadCommandError::from_string(format!("Expected {} arguments but received {}", expected, got))
     }
 }
 
