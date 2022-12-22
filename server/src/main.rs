@@ -1,4 +1,5 @@
 mod args;
+mod writeline;
 
 use std::net::{TcpListener, TcpStream};
 use std::io::{Write, BufRead, Result};
@@ -8,6 +9,8 @@ use args::Args;
 use clap::Parser;
 use std::{thread, fs};
 use itertools::Itertools;
+use writeline::WriteLine;
+
 
 use bufstream::BufStream;
 
@@ -34,25 +37,19 @@ fn handle_client(conn: TcpStream) -> Result<()> {
 
         match command_parts.next().unwrap() {
             "echo" => {
-                let response = format!("{}\n", command_parts.join(" "));
-                stream.write_all(response.as_bytes())?;
-                stream.flush()?;
+                stream.write_line(command_parts.join(" ").as_str())?;
                 trace!("Sent {} to {}", request, peer_addr);
             },
             "ls" => {
                 let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
-                stream.write_all(dirs.as_bytes())?;
-                stream.write_all("\n".as_bytes())?;
-                stream.flush()?;
+                stream.write_line(dirs.as_str())?;
             },
             "exit" => {
-                stream.write_all("Bye!\n".as_bytes())?;
-                stream.flush()?;
+                stream.write_line("Bye")?;
                 break;
             },
             _ => {
-                stream.write_all("Command not understood\n".as_bytes())?;
-                stream.flush()?;
+                stream.write_line("Command not understood")?;
             },
         }
     }
