@@ -1,5 +1,6 @@
 use itertools::Itertools;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Command {
     Echo(String),
     Ls,
@@ -75,5 +76,18 @@ impl Command {
             Command::Cat(_) => ExpectedArguments::Exactly(1),
             Command::Exit => ExpectedArguments::None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_echo() {
+        let result = Command::parse("echo some sample text");
+        
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Command::Echo(String::from("some sample text")));
     }
 }
