@@ -1,6 +1,7 @@
 mod args;
 mod writeline;
 
+use std::env;
 use std::fs::File;
 use std::net::{TcpListener, TcpStream};
 use std::io::{Write, BufRead, Result, BufReader};
@@ -56,6 +57,10 @@ fn handle_client(conn: TcpStream) -> Result<()> {
                 for line in reader.lines() {
                     stream.write_line(line?.as_str())?;
                 }
+            },
+            "cd" => {
+                let argument = command_parts.next().expect("Missing an argument to cd");
+                env::set_current_dir(argument)?;
             },
             "exit" => {
                 stream.write_line("Bye")?;
