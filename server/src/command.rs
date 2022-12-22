@@ -142,7 +142,6 @@ impl BadCommandError {
 }
 
 impl Command {
-    // TODO: Test
     pub fn parse(command_string: &str) -> Result<Self, BadCommandError> {
         let mut command_parts = command_string.split_whitespace();
         if let Some(command) = command_parts.next() {
