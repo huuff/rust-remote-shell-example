@@ -64,9 +64,7 @@ impl Command {
                 }
             }
         } else {
-            Err(BadCommandError {
-                msg: String::from("Missing command")
-            })
+            Err(BadCommandError::from_str("Missing command"))
         }
     }
 
