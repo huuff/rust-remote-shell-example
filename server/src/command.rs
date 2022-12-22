@@ -15,10 +15,18 @@ enum ExpectedArguments {
     Any,
 }
 
-// TODO: Factory function
 #[derive(Debug)]
 pub struct BadCommandError {
     msg: String,
+}
+
+impl BadCommandError {
+    pub fn from_string(msg: String) -> Self {
+        BadCommandError { msg }
+    }
+    pub fn from_str(msg: &str) -> Self {
+        BadCommandError::from_string(String::from(msg))
+    }
 }
 
 impl Command {
@@ -38,27 +46,21 @@ impl Command {
                     if let Some(argument) = command_parts.next() {
                         Ok(Command::Cd(String::from(argument)))
                     } else {
-                        Err(BadCommandError {
-                            msg: String::from("Missing argument to cd")
-                        })
+                        Err(BadCommandError::from_str("Missing argument to cd"))
                     }
                 },
                 "cat" => {
                     if let Some(argument) = command_parts.next() {
                         Ok(Command::Cat(String::from(argument)))
                     } else {
-                        Err(BadCommandError {
-                            msg: String::from("Missing argument to cat")
-                        })
+                        Err(BadCommandError::from_str("Missing argument to cat"))
                     }
                 },
                 "exit" => {
                     Ok(Command::Exit)
                 },
                 _ => {
-                    Err(BadCommandError {
-                        msg: String::from(format!("Unknown command {}", command))
-                    })
+                    Err(BadCommandError::from_string(format!("Unknown command {}", command)))
                 }
             }
         } else {
