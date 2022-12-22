@@ -37,10 +37,12 @@ fn handle_client(conn: TcpStream) -> Result<()> {
 
         match command_parts.next().unwrap() {
             "echo" => {
+                // TODO: Correct word splitting?
                 stream.write_line(command_parts.join(" ").as_str())?;
                 trace!("Sent {} to {}", request, peer_addr);
             },
             "ls" => {
+                // TODO: Arguments?
                 let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
                 stream.write_line(dirs.as_str())?;
             },
