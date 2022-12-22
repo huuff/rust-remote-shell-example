@@ -42,20 +42,20 @@ fn handle_client(conn: TcpStream) -> Result<()> {
         let command = Command::parse(&request).unwrap();
 
         match command {
-            Command::Echo(message) => {
-                stream.write_line(message.as_str())?;
+            Command::Echo(echo) => {
+                stream.write_line(echo.message.as_str())?;
             },
             Command::Ls => {
                 // TODO: Arguments?
                 let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
                 stream.write_line(dirs.as_str())?;
             },
-            Command::Cd(argument) => {
-                env::set_current_dir(argument)?;
+            Command::Cd(cd) => {
+                env::set_current_dir(cd.target_directory)?;
             },
-            Command::Cat(argument) => {
+            Command::Cat(cat) => {
                 // TODO: Handle error (missing file?)
-                let file = File::open(argument)?;
+                let file = File::open(cat.file)?;
                 let reader = BufReader::new(file);
                 for line in reader.lines() {
                     stream.write_line(line?.as_str())?;

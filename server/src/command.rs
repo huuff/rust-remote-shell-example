@@ -2,12 +2,49 @@ use itertools::Itertools;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Command {
-    Echo(String),
+    Echo(Echo),
     Ls,
-    Cd(String),
-    Cat(String),
+    Cd(Cd),
+    Cat(Cat),
     Exit,
 }
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Echo {
+    pub message: String,
+}
+
+impl Echo {
+    fn new(message: String) -> Self {
+        Echo { message }
+    }
+}
+
+pub struct Ls { }
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Cd {
+    pub target_directory: String,
+}
+
+impl Cd {
+    fn new(target_directory: String) -> Self {
+        Cd { target_directory }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Cat {
+    pub file: String,
+}
+
+impl Cat {
+    fn new(file: String) -> Self {
+        Cat { file }
+    }
+}
+
+pub struct Exit {}
 
 enum ExpectedArguments {
     None,
@@ -37,21 +74,21 @@ impl Command {
         if let Some(command) = command_parts.next() {
             match command {
                 "echo" => {
-                    Ok(Command::Echo(command_parts.join(" ")))
+                    Ok(Command::Echo(Echo::new(command_parts.join(" "))))
                 },
                 "ls" => {
                     Ok(Command::Ls)
                 },
                 "cd" => {
                     if let Some(argument) = command_parts.next() {
-                        Ok(Command::Cd(String::from(argument)))
+                        Ok(Command::Cd(Cd::new(String::from(argument))))
                     } else {
                         Err(BadCommandError::from_str("Missing argument to cd"))
                     }
                 },
                 "cat" => {
                     if let Some(argument) = command_parts.next() {
-                        Ok(Command::Cat(String::from(argument)))
+                        Ok(Command::Cat(Cat::new(String::from(argument))))
                     } else {
                         Err(BadCommandError::from_str("Missing argument to cat"))
                     }
@@ -88,7 +125,7 @@ mod tests {
         let result = Command::parse("echo some sample text");
         
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Command::Echo(String::from("some sample text")));
+        assert_eq!(result.unwrap(), Command::Echo(Echo::new(String::from("some sample text"))));
     }
 
     #[test]
@@ -96,6 +133,6 @@ mod tests {
         let result = Command::parse("cd dir");
 
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Command::Cd(String::from("dir")));
+        assert_eq!(result.unwrap(), Command::Cd(Cd::new(String::from("dir"))));
     }
 }
