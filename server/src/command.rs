@@ -92,4 +92,12 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Command::Echo(String::from("some sample text")));
     }
+
+    #[test]
+    fn parses_cd() {
+        let result = Command::parse("cd dir");
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Command::Cd(String::from("dir")));
+    }
 }
