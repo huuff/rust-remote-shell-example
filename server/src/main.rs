@@ -38,10 +38,14 @@ fn handle_client(conn: TcpStream) -> Result<()> {
             break;
         }
 
-        // TODO: Handle errors correctly (send to client)
-        let command = Command::parse(&request).unwrap();
+        let command = Command::parse(&request);
 
-        match command {
+        if let Err(err) = command {
+            stream.write_line(err.msg.as_str())?;
+            continue;
+        }
+
+        match command.unwrap() {
             Command::Echo(echo) => {
                 stream.write_line(echo.message.as_str())?;
             },

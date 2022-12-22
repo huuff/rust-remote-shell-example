@@ -126,7 +126,7 @@ fn parse_arguments(args: SplitWhitespace, expected_arguments: ExpectedArguments)
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BadCommandError {
-    msg: String,
+    pub msg: String,
 }
 
 impl BadCommandError {
