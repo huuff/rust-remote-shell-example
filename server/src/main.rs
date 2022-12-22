@@ -6,7 +6,7 @@ use log::{info, trace};
 use env_logger::Env;
 use args::Args;
 use clap::Parser;
-use std::thread;
+use std::{thread, fs};
 use itertools::Itertools;
 
 use bufstream::BufStream;
@@ -38,6 +38,12 @@ fn handle_client(conn: TcpStream) -> Result<()> {
                 stream.write_all(response.as_bytes())?;
                 stream.flush()?;
                 trace!("Sent {} to {}", request, peer_addr);
+            },
+            "ls" => {
+                let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
+                stream.write_all(dirs.as_bytes())?;
+                stream.write_all("\n".as_bytes())?;
+                stream.flush()?;
             },
             "exit" => {
                 stream.write_all("Bye!\n".as_bytes())?;
