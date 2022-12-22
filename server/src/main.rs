@@ -1,5 +1,6 @@
 mod args;
 mod writeline;
+mod command;
 
 use std::env;
 use std::fs::File;
@@ -16,6 +17,8 @@ use writeline::WriteLine;
 
 use bufstream::BufStream;
 
+use crate::command::Command;
+
 fn handle_client(conn: TcpStream) -> Result<()> {
     let peer_addr = conn.peer_addr()?.to_string();
     let mut request = String::with_capacity(512);
@@ -30,45 +33,38 @@ fn handle_client(conn: TcpStream) -> Result<()> {
         request.clear();
 
         let request_size = stream.read_line(&mut request)?;
-        
+
         if request_size == 0 {
             break;
         }
 
-        let mut command_parts = request.split_whitespace();
+        // TODO: Handle errors correctly (send to client)
+        let command = Command::parse(&request).unwrap();
 
-        // TODO: Logging the command that is running
-        match command_parts.next().unwrap() {
-            "echo" => {
-                // TODO: Correct word splitting?
-                stream.write_line(command_parts.join(" ").as_str())?;
-                trace!("Sent {} to {}", request, peer_addr);
+        match command {
+            Command::Echo(message) => {
+                stream.write_line(message.as_str())?;
             },
-            "ls" => {
+            Command::Ls => {
                 // TODO: Arguments?
                 let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
                 stream.write_line(dirs.as_str())?;
             },
-            "cat" => {
+            Command::Cd(argument) => {
+                env::set_current_dir(argument)?;
+            },
+            Command::Cat(argument) => {
                 // TODO: Handle error (missing file?)
-                let argument = command_parts.next().expect("Missing an argument to cat");
                 let file = File::open(argument)?;
                 let reader = BufReader::new(file);
                 for line in reader.lines() {
                     stream.write_line(line?.as_str())?;
                 }
             },
-            "cd" => {
-                let argument = command_parts.next().expect("Missing an argument to cd");
-                env::set_current_dir(argument)?;
-            },
-            "exit" => {
+            Command::Exit => {
                 stream.write_line("Bye")?;
                 break;
-            },
-            _ => {
-                stream.write_line("Command not understood")?;
-            },
+            }
         }
     }
 
@@ -79,8 +75,8 @@ fn handle_client(conn: TcpStream) -> Result<()> {
 
 fn main() -> Result<()> {
     env_logger::Builder
-              ::from_env(Env::default().default_filter_or("info"))
-              .init();
+        ::from_env(Env::default().default_filter_or("info"))
+        .init();
 
     let args = Args::parse();
     let bind_addr = format!("{}:{}", args.addr, args.port);
