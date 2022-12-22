@@ -3,10 +3,10 @@ use std::str::SplitWhitespace;
 #[derive(Debug, Eq, PartialEq)]
 pub enum Command {
     Echo(Echo),
-    Ls,
+    Ls(Ls),
     Cd(Cd),
     Cat(Cat),
-    Exit,
+    Exit(Exit),
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -20,7 +20,14 @@ impl Echo {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct Ls { }
+
+impl Ls {
+    pub fn new() -> Self {
+        Ls {}
+    }
+}
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Cd {
@@ -44,7 +51,14 @@ impl Cat {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct Exit {}
+
+impl Exit {
+    pub fn new() -> Self {
+        Exit {}
+    }
+}
 
 
 enum ExpectedArguments {
@@ -110,7 +124,7 @@ fn parse_arguments(args: SplitWhitespace, expected_arguments: ExpectedArguments)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct BadCommandError {
     msg: String,
 }
@@ -139,7 +153,7 @@ impl Command {
                 },
                 "ls" => {
                     parse_arguments(command_parts, Ls::expected_arguments())?;
-                    Ok(Command::Ls)
+                    Ok(Command::Ls(Ls::new()))
                 },
                 "cd" => {
                     let mut parsed_args = parse_arguments(command_parts, Cd::expected_arguments())?;
@@ -151,7 +165,7 @@ impl Command {
                 },
                 "exit" => {
                     parse_arguments(command_parts, Exit::expected_arguments())?;
-                    Ok(Command::Exit)
+                    Ok(Command::Exit(Exit::new()))
                 },
                 _ => {
                     Err(BadCommandError::from_string(format!("Unknown command {}", command)))
@@ -182,5 +196,21 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Command::Cd(Cd::new(String::from("dir"))));
+    }
+
+    #[test]
+    fn incorrect_arg_number_cd() {
+        let result = Command::parse("cd dir1 dir2");
+
+        assert!(result.is_err());
+        assert_eq!(result.err().unwrap(), BadCommandError::wrong_arg_number(1, 2));
+    }
+
+    #[test]
+    fn parses_exit() {
+        let result = Command::parse("exit");
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Command::Exit(Exit::new()));
     }
 }

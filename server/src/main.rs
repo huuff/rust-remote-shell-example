@@ -45,7 +45,7 @@ fn handle_client(conn: TcpStream) -> Result<()> {
             Command::Echo(echo) => {
                 stream.write_line(echo.message.as_str())?;
             },
-            Command::Ls => {
+            Command::Ls(_) => {
                 // TODO: Arguments?
                 let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
                 stream.write_line(dirs.as_str())?;
@@ -61,7 +61,7 @@ fn handle_client(conn: TcpStream) -> Result<()> {
                     stream.write_line(line?.as_str())?;
                 }
             },
-            Command::Exit => {
+            Command::Exit(_) => {
                 stream.write_line("Bye")?;
                 break;
             }
