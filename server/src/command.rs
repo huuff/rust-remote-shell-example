@@ -1,7 +1,5 @@
 use std::str::SplitWhitespace;
 
-use itertools::Itertools;
-
 #[derive(Debug, Eq, PartialEq)]
 pub enum Command {
     Echo(Echo),
@@ -55,6 +53,40 @@ enum ExpectedArguments {
     Any,
 }
 
+trait ArgumentReceiver {
+    fn expected_arguments() -> ExpectedArguments;
+}
+
+impl ArgumentReceiver for Echo {
+   fn expected_arguments() -> ExpectedArguments {
+       ExpectedArguments::Any
+   } 
+}
+
+impl ArgumentReceiver for Ls {
+    fn expected_arguments() -> ExpectedArguments {
+        ExpectedArguments::None
+    }
+}
+
+impl ArgumentReceiver for Cd {
+    fn expected_arguments() -> ExpectedArguments {
+        ExpectedArguments::Exactly(1)
+    }
+}
+
+impl ArgumentReceiver for Cat {
+    fn expected_arguments() -> ExpectedArguments {
+        ExpectedArguments::Exactly(1)
+    }
+}
+
+impl ArgumentReceiver for Exit {
+    fn expected_arguments() -> ExpectedArguments {
+        ExpectedArguments::None
+    }
+}
+
 fn parse_arguments(args: SplitWhitespace, expected_arguments: ExpectedArguments) -> Result<Vec<String>, BadCommandError> {
     let args = args.map(str::to_string).collect::<Vec<String>>();
     match expected_arguments {
@@ -96,33 +128,29 @@ impl BadCommandError {
 }
 
 impl Command {
-    // TODO: Clean it up with the below function
     // TODO: Test
     pub fn parse(command_string: &str) -> Result<Self, BadCommandError> {
         let mut command_parts = command_string.split_whitespace();
         if let Some(command) = command_parts.next() {
             match command {
                 "echo" => {
-                    Ok(Command::Echo(Echo::new(command_parts.join(" "))))
+                    let parsed_args = parse_arguments(command_parts, Echo::expected_arguments())?;
+                    Ok(Command::Echo(Echo::new(parsed_args.join(" "))))
                 },
                 "ls" => {
+                    parse_arguments(command_parts, Ls::expected_arguments())?;
                     Ok(Command::Ls)
                 },
                 "cd" => {
-                    if let Some(argument) = command_parts.next() {
-                        Ok(Command::Cd(Cd::new(String::from(argument))))
-                    } else {
-                        Err(BadCommandError::from_str("Missing argument to cd"))
-                    }
+                    let mut parsed_args = parse_arguments(command_parts, Cd::expected_arguments())?;
+                    Ok(Command::Cd(Cd::new(parsed_args.remove(0))))
                 },
                 "cat" => {
-                    if let Some(argument) = command_parts.next() {
-                        Ok(Command::Cat(Cat::new(String::from(argument))))
-                    } else {
-                        Err(BadCommandError::from_str("Missing argument to cat"))
-                    }
+                    let mut parsed_args = parse_arguments(command_parts, Cat::expected_arguments())?;
+                    Ok(Command::Cat(Cat::new(parsed_args.remove(0))))
                 },
                 "exit" => {
+                    parse_arguments(command_parts, Exit::expected_arguments())?;
                     Ok(Command::Exit)
                 },
                 _ => {
@@ -134,15 +162,6 @@ impl Command {
         }
     }
 
-    fn expected_arguments(&self) -> ExpectedArguments {
-        match self {
-            Command::Echo(_) => ExpectedArguments::Any,
-            Command::Ls => ExpectedArguments::None,
-            Command::Cd(_) => ExpectedArguments::Exactly(1),
-            Command::Cat(_) => ExpectedArguments::Exactly(1),
-            Command::Exit => ExpectedArguments::None,
-        }
-    }
 }
 
 #[cfg(test)]
