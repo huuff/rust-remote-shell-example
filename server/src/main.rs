@@ -69,6 +69,10 @@ fn handle_client(conn: TcpStream) -> Result<()> {
             Command::Exit(_) => {
                 stream.write_line("Bye")?;
                 break;
+            },
+            Command::Pwd(_) => {
+                let current_dir = env::current_dir()?;
+                stream.write_line(current_dir.to_str().unwrap())?;
             }
         }
     }
