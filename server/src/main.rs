@@ -6,10 +6,12 @@ use std::env;
 use std::fs::File;
 use std::net::{TcpListener, TcpStream};
 use std::io::{Write, BufRead, Result, BufReader};
+use lazy_static::lazy_static;
 use log::{info, trace};
 use env_logger::Env;
 use args::Args;
 use clap::Parser;
+use uuid::Uuid;
 use std::{thread, fs};
 use itertools::Itertools;
 use writeline::WriteLine;
@@ -19,10 +21,12 @@ use bufstream::BufStream;
 
 use crate::command::Command;
 
-fn handle_client(conn: TcpStream) -> Result<()> {
+fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
     let peer_addr = conn.peer_addr()?.to_string();
     let mut request = String::with_capacity(512);
     let mut stream = BufStream::new(&conn);
+
+    // TODO: Should ensure the user provides the password before proceeding
 
     loop {
         // Send prompt to client
@@ -108,11 +112,17 @@ fn main() -> Result<()> {
     let listener = TcpListener::bind(&bind_addr)?;
     info!("Bound to {}", bind_addr);
 
+    lazy_static!(
+        pub static ref PASSWORD: String = Uuid::new_v4().to_string();  
+    );
+
+    println!("The password is {}", PASSWORD.as_str());
+
     loop {
         for conn in listener.incoming() {
             let conn = conn?;
             info!("Received connection from {}", conn.peer_addr()?.to_string());
-            let _handle = thread::spawn(|| { handle_client(conn).unwrap() });
+            let _handle = thread::spawn(|| { handle_client(conn, PASSWORD.as_str()).unwrap() });
         }
 
     }
