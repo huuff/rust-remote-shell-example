@@ -21,11 +21,13 @@ impl Echo {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Ls { }
+pub struct Ls { 
+    pub target_directory: Option<String>
+}
 
 impl Ls {
-    pub fn new() -> Self {
-        Ls {}
+    pub fn new(target_directory: Option<String>) -> Self {
+        Ls { target_directory }
     }
 }
 
@@ -65,6 +67,7 @@ enum ExpectedArguments {
     None,
     Exactly(usize),
     Any,
+    Maybe(usize),
 }
 
 trait ArgumentReceiver {
@@ -79,7 +82,7 @@ impl ArgumentReceiver for Echo {
 
 impl ArgumentReceiver for Ls {
     fn expected_arguments() -> ExpectedArguments {
-        ExpectedArguments::None
+        ExpectedArguments::Maybe(1)
     }
 }
 
@@ -121,6 +124,13 @@ fn parse_arguments(args: SplitWhitespace, expected_arguments: ExpectedArguments)
                 Err(BadCommandError::wrong_arg_number(n, args.len()))
             }
         }
+        ExpectedArguments::Maybe(n) => {
+            if args.is_empty() || args.len() == n {
+                Ok(args)
+            } else {
+                Err(BadCommandError::wrong_maybe_arg_number(n, args.len()))
+            }
+        }
     }
 }
 
@@ -137,7 +147,10 @@ impl BadCommandError {
         BadCommandError::from_string(String::from(msg))
     }
     pub fn wrong_arg_number(expected: usize, got: usize) -> Self {
-        BadCommandError::from_string(format!("Expected {} arguments but received {}", expected, got))
+        BadCommandError::from_string(format!("Expected {} arguments, but received {}", expected, got))
+    }
+    pub fn wrong_maybe_arg_number(expected: usize, got: usize) -> Self {
+        BadCommandError::from_string(format!("Expected {} or 0 arguments, but received {}", expected, got))
     }
 }
 
@@ -151,8 +164,8 @@ impl Command {
                     Ok(Command::Echo(Echo::new(parsed_args.join(" "))))
                 },
                 "ls" => {
-                    parse_arguments(command_parts, Ls::expected_arguments())?;
-                    Ok(Command::Ls(Ls::new()))
+                    let parsed_args = parse_arguments(command_parts, Ls::expected_arguments())?;
+                    Ok(Command::Ls(Ls::new(parsed_args.into_iter().next())))
                 },
                 "cd" => {
                     let mut parsed_args = parse_arguments(command_parts, Cd::expected_arguments())?;
@@ -211,5 +224,13 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Command::Exit(Exit::new()));
+    }
+
+    #[test]
+    fn correct_error_on_ls() {
+        let result = Command::parse("ls dir1 dir2");
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), BadCommandError::wrong_maybe_arg_number(1, 2));
     }
 }

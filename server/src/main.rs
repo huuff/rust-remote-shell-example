@@ -49,9 +49,10 @@ fn handle_client(conn: TcpStream) -> Result<()> {
             Command::Echo(echo) => {
                 stream.write_line(echo.message.as_str())?;
             },
-            Command::Ls(_) => {
-                // TODO: Arguments?
-                let dirs = fs::read_dir(".")?.map(|f| f.unwrap().path().display().to_string()).join("\n");
+            Command::Ls(ls) => {
+                let target_dir = ls.target_directory.unwrap_or(String::from("."));
+                // TODO: Handle error (i.e. target directory is non-existent)
+                let dirs = fs::read_dir(target_dir)?.map(|f| f.unwrap().path().display().to_string()).join("\n");
                 stream.write_line(dirs.as_str())?;
             },
             Command::Cd(cd) => {
