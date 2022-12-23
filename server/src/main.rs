@@ -67,12 +67,20 @@ fn handle_client(conn: TcpStream) -> Result<()> {
                 env::set_current_dir(cd.target_directory)?;
             },
             Command::Cat(cat) => {
-                // TODO: Handle error (missing file?)
-                let file = File::open(cat.file)?;
-                let reader = BufReader::new(file);
-                for line in reader.lines() {
-                    stream.write_line(line?.as_str())?;
+                let file_open_result = File::open(cat.file);
+
+                match file_open_result {
+                    Ok(file) => {
+                        let reader = BufReader::new(file);
+                        for line in reader.lines() {
+                            stream.write_line(line?.as_str())?;
+                        }
+                    },
+                    Err(err) => {
+                        stream.write_line(err.to_string().as_str())?;
+                    }
                 }
+
             },
             Command::Exit(_) => {
                 stream.write_line("Bye")?;
