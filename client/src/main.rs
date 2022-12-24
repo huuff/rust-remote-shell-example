@@ -23,6 +23,7 @@ fn main() -> Result<()> {
     let mut response = String::with_capacity(4096);
     let mut prompt_buffer = [0u8; 2];
 
+    // TODO: This crashes uglily when sending `exit`
     loop {
         response.clear();
         let read_bytes = stream.read_crlf_line(&mut response)?;
