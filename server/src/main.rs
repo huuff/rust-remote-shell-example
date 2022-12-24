@@ -60,6 +60,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
         request.clear();
 
         let request_size = stream.read_line(&mut request)?;
+        trace!("Received `{}` from {}", request.trim(), peer_addr);
 
         if request_size == 0 {
             break;
@@ -72,6 +73,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
             continue;
         }
 
+        // TODO: Log responses? how?
         match command.unwrap() {
             Command::Echo(echo) => {
                 stream.write_line(echo.message.as_str())?;

@@ -36,7 +36,7 @@ fn main() -> Result<()> {
         io::stdin().read_line(&mut request)?;
         stream.write_line(request.trim())?;
         stream.flush()?;
-        trace!("Sent {} to the server", request);
+        trace!("Sent {} to the server", request.trim());
     }
 
 }
