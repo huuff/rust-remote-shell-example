@@ -1,5 +1,4 @@
 mod args;
-mod crlf;
 
 use crate::args::Args;
 use env_logger::Env;

@@ -1,5 +1,4 @@
 mod args;
-mod crlf;
 mod command;
 
 use std::env;
@@ -12,7 +11,7 @@ use args::Args;
 use clap::Parser;
 use std::{thread, fs};
 use itertools::Itertools;
-use crate::crlf::WriteCrlfLine;
+use crlf::WriteCrlfLine;
 use bufstream::BufStream;
 use crate::command::Command;
 

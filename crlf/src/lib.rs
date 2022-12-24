@@ -1,5 +1,4 @@
 // XXX: Literal copy-paste of my rust crlf library
-// TODO: Literal copy-paste between server and client. Use a workspace or smth
 
 use std::io::{Read, Write, BufRead, Result};
 use std::str;
