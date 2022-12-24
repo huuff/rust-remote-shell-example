@@ -28,15 +28,15 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
 
     let mut password_guesses = 0;
 
+    stream.write_line("Please provide the password")?;
     loop {
-        stream.write_line("Please provide the password")?;
         stream.write_all(b"> ")?;
         stream.flush()?;
 
         request.clear();
 
         stream.read_line(&mut request)?;
-        trace!("Received password attempt {}", request);
+        trace!("Received password attempt {}", request.trim());
 
         if request.trim() != password {
             stream.write_line("Incorrect password")?;
