@@ -94,7 +94,8 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
                 }
             },
             Command::Cd(cd) => {
-                env::set_current_dir(cd.target_directory)?;
+                env::set_current_dir(&cd.target_directory)?;
+                stream.write_crlf_line(format!("Changed directory to {}", cd.target_directory).as_bytes())?;
             },
             Command::Cat(cat) => {
                 let file_open_result = File::open(cat.file);
