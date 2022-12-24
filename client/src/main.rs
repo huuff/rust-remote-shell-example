@@ -1,12 +1,12 @@
 mod args;
-mod writeline;
+mod crlf;
 
 use crate::args::Args;
 use env_logger::Env;
 use bufstream::BufStream;
 use clap::Parser;
-use std::{io::{Result, BufRead, self, Read, Write}, net::TcpStream};
-use writeline::WriteLine;
+use std::{io::{Result, self, Read, Write}, net::TcpStream};
+use crlf::{ReadCrlfLine, WriteCrlfLine};
 use log::trace;
 
 fn main() -> Result<()> {
@@ -25,8 +25,9 @@ fn main() -> Result<()> {
 
     loop {
         response.clear();
-        stream.read_line(&mut response)?;
-        print!("{}", response);
+        let read_bytes = stream.read_crlf_line(&mut response)?;
+        trace!("Received {} bytes from server", read_bytes);
+        println!("{}", response);
         stream.read_exact(&mut prompt_buffer)?;
         print!("{}", std::str::from_utf8(&mut prompt_buffer).unwrap());
         io::stdout().flush()?;
@@ -34,7 +35,7 @@ fn main() -> Result<()> {
         request.clear();
         trace!("Requesting input from user");
         io::stdin().read_line(&mut request)?;
-        stream.write_line(request.trim())?;
+        stream.write_crlf_line(request.trim().as_bytes())?;
         stream.flush()?;
         trace!("Sent {} to the server", request.trim());
     }

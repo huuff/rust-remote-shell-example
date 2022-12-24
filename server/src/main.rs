@@ -1,5 +1,5 @@
 mod args;
-mod writeline;
+mod crlf;
 mod command;
 
 use std::env;
@@ -14,7 +14,7 @@ use clap::Parser;
 use uuid::Uuid;
 use std::{thread, fs};
 use itertools::Itertools;
-use writeline::WriteLine;
+use crate::crlf::WriteCrlfLine;
 use bufstream::BufStream;
 use crate::command::Command;
 
@@ -25,7 +25,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
 
     let mut password_guesses = 0;
 
-    stream.write_line("Please provide the password")?;
+    stream.write_crlf_line("Please provide the password".as_bytes())?;
     loop {
         stream.write_all(b"> ")?;
         stream.flush()?;
@@ -36,11 +36,11 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
         trace!("Received password attempt {}", request.trim());
 
         if request.trim() != password {
-            stream.write_line("Incorrect password")?;
+            stream.write_crlf_line("Incorrect password".as_bytes())?;
             password_guesses += 1;
             
             if password_guesses == 3 {
-                stream.write_line("Too many incorrect guesses. Kicking you out")?;
+                stream.write_crlf_line("Too many incorrect guesses. Kicking you out".as_bytes())?;
                 return Ok(());
             }
         } else {
@@ -50,7 +50,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
     }
 
     // TODO: A "help" command?
-    stream.write_line("Enter your command")?;
+    stream.write_crlf_line("Enter your command".as_bytes())?;
     loop {
         // Send prompt to client
         stream.write_all(b"> ")?;
@@ -69,14 +69,14 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
         let command = Command::parse(&request);
 
         if let Err(err) = command {
-            stream.write_line(err.msg.as_str())?;
+            stream.write_crlf_line(err.msg.as_bytes())?;
             continue;
         }
 
         // TODO: Log responses? how?
         match command.unwrap() {
             Command::Echo(echo) => {
-                stream.write_line(echo.message.as_str())?;
+                stream.write_crlf_line(echo.message.as_bytes())?;
             },
             Command::Ls(ls) => {
                 let target_dir = ls.target_directory.unwrap_or(String::from("."));
@@ -85,10 +85,11 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
                 match read_dir_result {
                     Ok(dir_contents) => {
                         let dirs = dir_contents.map(|f| f.unwrap().path().display().to_string()).join("\n");
-                        stream.write_line(dirs.as_str())?;
+                        trace!("Sending {} to {}", dirs, peer_addr);
+                        stream.write_crlf_line(dirs.as_bytes())?;
                     },
                     Err(err) => {
-                        stream.write_line(err.to_string().as_str())?;
+                        stream.write_crlf_line(err.to_string().as_bytes())?;
                     }
                 }
             },
@@ -102,22 +103,22 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
                     Ok(file) => {
                         let reader = BufReader::new(file);
                         for line in reader.lines() {
-                            stream.write_line(line?.as_str())?;
+                            stream.write_crlf_line(line?.as_bytes())?;
                         }
                     },
                     Err(err) => {
-                        stream.write_line(err.to_string().as_str())?;
+                        stream.write_crlf_line(err.to_string().as_bytes())?;
                     }
                 }
 
             },
             Command::Exit(_) => {
-                stream.write_line("Bye")?;
+                stream.write_crlf_line("Bye".as_bytes())?;
                 break;
             },
             Command::Pwd(_) => {
                 let current_dir = env::current_dir()?;
-                stream.write_line(current_dir.to_str().unwrap())?;
+                stream.write_crlf_line(current_dir.to_str().unwrap().as_bytes())?;
             }
         }
     }
