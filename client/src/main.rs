@@ -23,12 +23,16 @@ fn main() -> Result<()> {
     let mut response = String::with_capacity(4096);
     let mut prompt_buffer = [0u8; 2];
 
-    // TODO: This crashes uglily when sending `exit`
     loop {
         response.clear();
         let read_bytes = stream.read_crlf_line(&mut response)?;
         trace!("Received {} bytes from server", read_bytes);
         println!("{}", response);
+
+        if request.trim() == "exit" {
+            break;
+        }
+
         stream.read_exact(&mut prompt_buffer)?;
         print!("{}", std::str::from_utf8(&mut prompt_buffer).unwrap());
         io::stdout().flush()?;
@@ -41,4 +45,5 @@ fn main() -> Result<()> {
         trace!("Sent {} to the server", request.trim());
     }
 
+    Ok(())
 }
