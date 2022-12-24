@@ -22,7 +22,11 @@
         })
         cargo
         rust-analyzer
+        pkg-config
+        openssl
       ];
+      
+
     };
   };
 }
