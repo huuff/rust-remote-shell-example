@@ -8,6 +8,7 @@ pub enum Command {
     Cat(Cat),
     Exit(Exit),
     Pwd(Pwd),
+    Help(Help),
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -72,6 +73,14 @@ impl Pwd {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct Help {}
+
+impl Help {
+    pub fn new() -> Self {
+        Help {}
+    }
+}
 
 enum ExpectedArguments {
     None,
@@ -115,6 +124,12 @@ impl ArgumentReceiver for Exit {
 }
 
 impl ArgumentReceiver for Pwd {
+    fn expected_arguments() -> ExpectedArguments {
+        ExpectedArguments::None
+    }
+}
+
+impl ArgumentReceiver for Help {
     fn expected_arguments() -> ExpectedArguments {
         ExpectedArguments::None
     }
@@ -198,6 +213,10 @@ impl Command {
                 "pwd" => {
                     parse_arguments(command_parts, Pwd::expected_arguments())?;
                     Ok(Command::Pwd(Pwd::new()))
+                },
+                "help" => {
+                    parse_arguments(command_parts, Help::expected_arguments())?;
+                    Ok(Command::Help(Help::new()))
                 },
                 _ => {
                     Err(BadCommandError::from_string(format!("Unknown command {}", command)))

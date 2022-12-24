@@ -49,7 +49,6 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
         }
     }
 
-    // TODO: A "help" command?
     stream.write_crlf_line("Enter your command".as_bytes())?;
     loop {
         // Send prompt to client
@@ -120,7 +119,18 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
             Command::Pwd(_) => {
                 let current_dir = env::current_dir()?;
                 stream.write_crlf_line(current_dir.to_str().unwrap().as_bytes())?;
-            }
+            },
+            Command::Help(_) => {
+                stream.write_crlf_line(r#"
+    pwd - Print current directory
+    cd - Change directory
+    ls [dir] - List contents of [dir], or current directory
+    cat file - Print contents of file
+    echo [msg] - Print msg
+    exit - Leave shell
+    help - Print this helpful message
+"#.as_bytes())?;
+            },
         }
     }
 
