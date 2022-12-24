@@ -138,6 +138,7 @@ fn main() -> Result<()> {
     let listener = TcpListener::bind(&bind_addr)?;
     info!("Bound to {}", bind_addr);
 
+    // TODO: Add option to provide it from args with clap
     lazy_static!(
         pub static ref PASSWORD: String = Uuid::new_v4().to_string();  
         );
