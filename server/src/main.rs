@@ -48,6 +48,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
     }
 
     stream.write_crlf_line("Enter your command".as_bytes())?;
+    let mut response: Option<String>;
     loop {
         // Send prompt to client
         stream.write_all(b"> ")?;
@@ -70,10 +71,9 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
             continue;
         }
 
-        // TODO: Log responses? how?
         match command.unwrap() {
             Command::Echo(echo) => {
-                stream.write_crlf_line(echo.message.as_bytes())?;
+                response = Some(echo.message);
             },
             Command::Ls(ls) => {
                 let target_dir = ls.target_directory.unwrap_or(String::from("."));
@@ -83,16 +83,16 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
                     Ok(dir_contents) => {
                         let dirs = dir_contents.map(|f| f.unwrap().path().display().to_string()).join("\n");
                         trace!("Sending {} to {}", dirs, peer_addr);
-                        stream.write_crlf_line(dirs.as_bytes())?;
+                        response = Some(dirs);
                     },
                     Err(err) => {
-                        stream.write_crlf_line(err.to_string().as_bytes())?;
+                        response = Some(err.to_string());
                     }
                 }
             },
             Command::Cd(cd) => {
                 env::set_current_dir(&cd.target_directory)?;
-                stream.write_crlf_line(format!("Changed directory to {}", cd.target_directory).as_bytes())?;
+                response = Some(format!("Changed directory to {}", cd.target_directory));
             },
             Command::Cat(cat) => {
                 let file_open_result = File::open(cat.file);
@@ -102,10 +102,10 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
                         let mut buf = Vec::new();
                         let mut reader = BufReader::new(file);
                         reader.read_to_end(&mut buf)?;
-                        stream.write_crlf_line(&buf)?;
+                        response = Some(String::from_utf8(buf).unwrap());
                     },
                     Err(err) => {
-                        stream.write_crlf_line(err.to_string().as_bytes())?;
+                        response = Some(err.to_string());
                     }
                 }
 
@@ -116,10 +116,10 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
             },
             Command::Pwd(_) => {
                 let current_dir = env::current_dir()?;
-                stream.write_crlf_line(current_dir.to_str().unwrap().as_bytes())?;
+                response = Some(String::from(current_dir.to_str().unwrap()));
             },
             Command::Help(_) => {
-                stream.write_crlf_line(r#"
+                response = Some(String::from(r#"
     pwd - Print current directory
     cd - Change directory
     ls [dir] - List contents of [dir], or current directory
@@ -127,9 +127,15 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
     echo [msg] - Print msg
     exit - Leave shell
     help - Print this helpful message
-"#.as_bytes())?;
+"#));
             },
         }
+
+        if let Some(response) = response {
+            stream.write_crlf_line(response.as_bytes())?;
+            trace!("Sent {} to {}", response, peer_addr);
+        }
+
     }
 
     info!("Dropping connection from {}", peer_addr);
