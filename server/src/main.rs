@@ -6,12 +6,10 @@ use std::env;
 use std::fs::File;
 use std::net::{TcpListener, TcpStream};
 use std::io::{Write, BufRead, Result, BufReader, Read};
-use lazy_static::lazy_static;
 use log::{info, trace};
 use env_logger::Env;
 use args::Args;
 use clap::Parser;
-use uuid::Uuid;
 use std::{thread, fs};
 use itertools::Itertools;
 use crate::crlf::WriteCrlfLine;
@@ -149,18 +147,14 @@ fn main() -> Result<()> {
     let listener = TcpListener::bind(&bind_addr)?;
     info!("Bound to {}", bind_addr);
 
-    // TODO: Add option to provide it from args with clap
-    lazy_static!(
-        pub static ref PASSWORD: String = Uuid::new_v4().to_string();  
-        );
-
-    println!("The password is {}", PASSWORD.as_str());
+    println!("The password is {}", args.password.as_str());
 
     loop {
         for conn in listener.incoming() {
             let conn = conn?;
             info!("Received connection from {}", conn.peer_addr()?.to_string());
-            let _handle = thread::spawn(|| { handle_client(conn, PASSWORD.as_str()).unwrap() });
+            let password_clone = args.password.clone();
+            let _handle = thread::spawn(move || { handle_client(conn, password_clone.as_str()).unwrap() });
         }
 
     }
