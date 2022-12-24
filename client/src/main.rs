@@ -2,12 +2,18 @@ mod args;
 mod writeline;
 
 use crate::args::Args;
+use env_logger::Env;
 use bufstream::BufStream;
 use clap::Parser;
 use std::{io::{Result, BufRead, self, Read, Write}, net::TcpStream};
 use writeline::WriteLine;
+use log::trace;
 
 fn main() -> Result<()> {
+    env_logger::Builder
+        ::from_env(Env::default().default_filter_or("info"))
+        .init();
+
     let args = Args::parse();
 
     let addr = format!("{}:{}", args.host, args.port);
@@ -26,9 +32,11 @@ fn main() -> Result<()> {
         io::stdout().flush()?;
         stream.flush()?;
         request.clear();
+        trace!("Requesting input from user");
         io::stdin().read_line(&mut request)?;
         stream.write_line(request.trim())?;
         stream.flush()?;
+        trace!("Sent {} to the server", request);
     }
 
 }

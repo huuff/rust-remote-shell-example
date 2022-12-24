@@ -15,10 +15,7 @@ use uuid::Uuid;
 use std::{thread, fs};
 use itertools::Itertools;
 use writeline::WriteLine;
-
-
 use bufstream::BufStream;
-
 use crate::command::Command;
 
 fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
@@ -47,10 +44,13 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
                 return Ok(());
             }
         } else {
+            trace!("Client {} sent the correct password. Accepted", peer_addr);
             break;
         }
     }
 
+    // TODO: A "help" command?
+    stream.write_line("Enter your command")?;
     loop {
         // Send prompt to client
         stream.write_all(b"> ")?;
