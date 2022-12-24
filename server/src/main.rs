@@ -26,7 +26,29 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
     let mut request = String::with_capacity(512);
     let mut stream = BufStream::new(&conn);
 
-    // TODO: Should ensure the user provides the password before proceeding
+    let mut password_guesses = 0;
+
+    loop {
+        stream.write_line("Please provide the password")?;
+        stream.write_all(b"> ")?;
+        stream.flush()?;
+
+        request.clear();
+
+        stream.read_line(&mut request)?;
+
+        if request.trim() != password {
+            stream.write_line("Incorrect password")?;
+            password_guesses += 1;
+            
+            if password_guesses == 3 {
+                stream.write_line("Too many incorrect guesses. Kicking you out")?;
+                return Ok(());
+            }
+        } else {
+            break;
+        }
+    }
 
     loop {
         // Send prompt to client
@@ -114,7 +136,7 @@ fn main() -> Result<()> {
 
     lazy_static!(
         pub static ref PASSWORD: String = Uuid::new_v4().to_string();  
-    );
+        );
 
     println!("The password is {}", PASSWORD.as_str());
 
