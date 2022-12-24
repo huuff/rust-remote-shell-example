@@ -27,7 +27,7 @@ fn main() -> Result<()> {
         stream.flush()?;
         request.clear();
         io::stdin().read_line(&mut request)?;
-        stream.write_line(request.as_str())?;
+        stream.write_line(request.trim())?;
         stream.flush()?;
     }
 
