@@ -5,7 +5,7 @@ mod command;
 use std::env;
 use std::fs::File;
 use std::net::{TcpListener, TcpStream};
-use std::io::{Write, BufRead, Result, BufReader};
+use std::io::{Write, BufRead, Result, BufReader, Read};
 use lazy_static::lazy_static;
 use log::{info, trace};
 use env_logger::Env;
@@ -101,10 +101,10 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
 
                 match file_open_result {
                     Ok(file) => {
-                        let reader = BufReader::new(file);
-                        for line in reader.lines() {
-                            stream.write_crlf_line(line?.as_bytes())?;
-                        }
+                        let mut buf = Vec::new();
+                        let mut reader = BufReader::new(file);
+                        reader.read_to_end(&mut buf)?;
+                        stream.write_crlf_line(&buf)?;
                     },
                     Err(err) => {
                         stream.write_crlf_line(err.to_string().as_bytes())?;
