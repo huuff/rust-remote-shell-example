@@ -36,6 +36,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
         request.clear();
 
         stream.read_line(&mut request)?;
+        trace!("Received password attempt {}", request);
 
         if request.trim() != password {
             stream.write_line("Incorrect password")?;

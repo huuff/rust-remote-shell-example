@@ -15,13 +15,13 @@ fn main() -> Result<()> {
     let mut stream = BufStream::new(&conn);
     let mut request = String::with_capacity(512);
     let mut response = String::with_capacity(4096);
-    let mut prompt_buffer: Vec<u8> = Vec::new();
+    let mut prompt_buffer = [0u8; 2];
 
     loop {
         response.clear();
         stream.read_line(&mut response)?;
         print!("{}", response);
-        stream.read_until(b' ', &mut prompt_buffer)?;
+        stream.read_exact(&mut prompt_buffer)?;
         print!("{}", std::str::from_utf8(&mut prompt_buffer).unwrap());
         io::stdout().flush()?;
         stream.flush()?;
