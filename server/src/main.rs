@@ -5,10 +5,12 @@ use std::env;
 use std::fs::File;
 use std::net::{TcpListener, TcpStream};
 use std::io::{Write, BufRead, BufReader, Read};
+use std::sync::Arc;
 use log::{info, trace};
 use env_logger::Env;
 use args::Args;
 use clap::Parser;
+use native_tls::{Identity, TlsAcceptor};
 use std::{thread, fs};
 use itertools::Itertools;
 use crlf::WriteCrlfLine;
@@ -16,10 +18,14 @@ use bufstream::BufStream;
 use crate::command::Command;
 use std::error::Error;
 
-fn handle_client(conn: TcpStream, password: &str) -> Result<(), Box<dyn Error>> {
-    let peer_addr = conn.peer_addr()?.to_string();
+pub trait ReadWrite: Read + Write {}
+impl <T: Read + Write> ReadWrite for T {}
+
+fn handle_client(conn: Box<dyn ReadWrite>, password: &str) -> Result<(), Box<dyn Error>> {
+    //let peer_addr = conn.peer_addr()?.to_string();
+    let peer_addr = String::from("Gotta fix this (previous comment)");
     let mut request = String::with_capacity(512);
-    let mut stream = BufStream::new(&conn);
+    let mut stream = BufStream::new(conn);
 
     let mut password_guesses = 0;
 
@@ -143,6 +149,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
+
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::Builder
         ::from_env(Env::default().default_filter_or("info"))
@@ -151,6 +158,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
     let bind_addr = format!("{}:{}", args.addr, args.port);
     let listener = TcpListener::bind(&bind_addr)?;
+
+    let tls_acceptor = if let Some(cert) = args.cert {
+        let mut cert = File::open(cert)?;
+        let mut identity = vec![];
+        cert.read_to_end(&mut identity)?;
+        let identity = Identity::from_pkcs12(&identity, args.password.as_str())?;
+        let acceptor = TlsAcceptor::new(identity)?;
+        Some(Arc::new(acceptor))
+    } else {
+        None
+    };
+
     info!("Bound to {}", bind_addr);
 
     println!("The password is {}", args.password.as_str());
@@ -159,8 +178,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         for conn in listener.incoming() {
             let conn = conn?;
             info!("Received connection from {}", conn.peer_addr()?.to_string());
+            
+            let acceptor = tls_acceptor.as_ref().map(|a| a.clone());
+
             let password_clone = args.password.clone();
-            let _handle = thread::spawn(move || { handle_client(conn, password_clone.as_str()).unwrap() });
+            let _handle = thread::spawn(move || { 
+                let conn: Box<dyn ReadWrite> = if let Some(acceptor) = acceptor {
+                    Box::new(acceptor.accept(conn).unwrap())
+                } else {
+                    Box::new(conn)
+                };
+                handle_client(conn, password_clone.as_str()).unwrap() 
+            });
         }
 
     }

@@ -13,4 +13,9 @@ pub struct Args {
     #[arg(long, default_value_t = Uuid::new_v4().to_string())]
     pub password: String,
 
+    #[arg(short, long)]
+    pub cert: Option<String>,
+
+    #[arg(long, default_value_t = String::from(""))]
+    pub passphrase: String,
 }
