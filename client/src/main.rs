@@ -4,11 +4,12 @@ use crate::args::Args;
 use env_logger::Env;
 use bufstream::BufStream;
 use clap::Parser;
-use std::{io::{Result, self, Read, Write}, net::TcpStream};
+use std::{io::{self, Read, Write}, net::TcpStream};
 use crlf::{ReadCrlfLine, WriteCrlfLine};
 use log::trace;
+use std::error::Error;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::Builder
         ::from_env(Env::default().default_filter_or("info"))
         .init();

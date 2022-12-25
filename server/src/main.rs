@@ -4,7 +4,7 @@ mod command;
 use std::env;
 use std::fs::File;
 use std::net::{TcpListener, TcpStream};
-use std::io::{Write, BufRead, Result, BufReader, Read};
+use std::io::{Write, BufRead, BufReader, Read};
 use log::{info, trace};
 use env_logger::Env;
 use args::Args;
@@ -14,8 +14,9 @@ use itertools::Itertools;
 use crlf::WriteCrlfLine;
 use bufstream::BufStream;
 use crate::command::Command;
+use std::error::Error;
 
-fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
+fn handle_client(conn: TcpStream, password: &str) -> Result<(), Box<dyn Error>> {
     let peer_addr = conn.peer_addr()?.to_string();
     let mut request = String::with_capacity(512);
     let mut stream = BufStream::new(&conn);
@@ -142,7 +143,7 @@ fn handle_client(conn: TcpStream, password: &str) -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::Builder
         ::from_env(Env::default().default_filter_or("info"))
         .init();
