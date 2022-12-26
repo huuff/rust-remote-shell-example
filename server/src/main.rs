@@ -3,7 +3,7 @@ mod command;
 
 use std::env;
 use std::fs::File;
-use std::net::{TcpListener, TcpStream};
+use std::net::{TcpListener};
 use std::io::{Write, BufRead, BufReader, Read};
 use std::sync::Arc;
 use log::{info, trace};
