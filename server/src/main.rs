@@ -163,7 +163,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut cert = File::open(cert)?;
         let mut identity = vec![];
         cert.read_to_end(&mut identity)?;
-        let identity = Identity::from_pkcs12(&identity, args.password.as_str())?;
+        println!("Passphrase: {}", args.passphrase);
+        let identity = Identity::from_pkcs12(&identity, args.passphrase.as_str())?;
         let acceptor = TlsAcceptor::new(identity)?;
         Some(Arc::new(acceptor))
     } else {
