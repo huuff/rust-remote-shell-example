@@ -14,5 +14,8 @@ pub struct Args {
 
     #[arg(short, long, default_value_t = String::from("localhost"))]
     pub host: String,
+
+    #[arg(long, default_value_t = false)]
+    pub tls: bool,
     
 }

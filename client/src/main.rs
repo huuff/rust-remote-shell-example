@@ -4,10 +4,14 @@ use crate::args::Args;
 use env_logger::Env;
 use bufstream::BufStream;
 use clap::Parser;
+use native_tls::TlsConnector;
 use std::{io::{self, Read, Write}, net::TcpStream};
 use crlf::{ReadCrlfLine, WriteCrlfLine};
 use log::trace;
 use std::error::Error;
+
+pub trait ReadWrite: Read + Write {}
+impl <T: Read + Write> ReadWrite for T {}
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::Builder
@@ -17,8 +21,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
     let addr = format!("{}:{}", args.host, args.port);
-    let conn = TcpStream::connect(addr)?;
-    let mut stream = BufStream::new(&conn);
+
+    let conn: Box<dyn ReadWrite> = if args.tls {
+        let connector = TlsConnector::builder()
+                                    .danger_accept_invalid_certs(true)
+                                    .build()?;
+        let conn = TcpStream::connect(&addr)?;
+        Box::new(connector.connect(&addr, conn)?)
+    } else {
+        Box::new(TcpStream::connect(addr)?)
+    };
+    let mut stream = BufStream::new(conn);
     let mut request = String::with_capacity(512);
     let mut response = String::with_capacity(4096);
     let mut prompt_buffer = [0u8; 2];
