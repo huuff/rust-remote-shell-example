@@ -3,7 +3,7 @@ mod command;
 
 use std::env;
 use std::fs::File;
-use std::net::{TcpListener};
+use std::net::TcpListener;
 use std::io::{Write, BufRead, BufReader, Read};
 use std::sync::Arc;
 use log::{info, trace};
@@ -21,9 +21,7 @@ use std::error::Error;
 pub trait ReadWrite: Read + Write {}
 impl <T: Read + Write> ReadWrite for T {}
 
-fn handle_client(conn: Box<dyn ReadWrite>, password: &str) -> Result<(), Box<dyn Error>> {
-    //let peer_addr = conn.peer_addr()?.to_string();
-    let peer_addr = String::from("Gotta fix this (previous comment)");
+fn handle_client(conn: Box<dyn ReadWrite>, password: &str, peer_addr: String) -> Result<(), Box<dyn Error>> {
     let mut request = String::with_capacity(512);
     let mut stream = BufStream::new(conn);
 
@@ -178,6 +176,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     loop {
         for conn in listener.incoming() {
             let conn = conn?;
+            let peer_addr = conn.peer_addr()?.to_string();
             info!("Received connection from {}", conn.peer_addr()?.to_string());
             
             let acceptor = tls_acceptor.as_ref().map(|a| a.clone());
@@ -189,7 +188,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 } else {
                     Box::new(conn)
                 };
-                handle_client(conn, password_clone.as_str()).unwrap() 
+                handle_client(conn, password_clone.as_str(), peer_addr).unwrap() 
             });
         }
 
